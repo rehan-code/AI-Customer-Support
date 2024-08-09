@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import {NextResponse} from 'next/server' // Import NextResponse from Next.js for handling responses
 import OpenAI from 'openai' // Import OpenAI library for interacting with the OpenAI API
 
@@ -49,14 +50,20 @@ Thank you for providing exceptional support to our Rentr community! Your assista
 
 // POST function to handle incoming requests
 export async function POST(req) {
-  const openai = new OpenAI() // Create a new instance of the OpenAI client
+  // const openai = new OpenAI() // Create a new instance of the OpenAI client
+  const genAI = new GoogleGenerativeAI('API_KEY');
+  const model = genAI.getGenerativeModel({ model: "gemini-pro"});
   const data = await req.json() // Parse the JSON body of the incoming request
 
   // Create a chat completion request to the OpenAI API
-  const completion = await openai.chat.completions.create({
-    messages: [{role: 'system', content: systemPrompt}, ...data], // Include the system prompt and user messages
-    model: 'gpt-3.5-turbo', // Specify the model to use
-    stream: true, // Enable streaming responses
+  // const completion = await openai.chat.completions.create({
+  //   messages: [{role: 'system', content: systemPrompt}, ...data], // Include the system prompt and user messages
+  //   model: 'gpt-3.5-turbo', // Specify the model to use
+  //   stream: true, // Enable streaming responses
+  // })
+  const completion = model.startChat({
+    history: [{role: 'user', parts: systemPrompt}, {role:"model", parts: "Great to meet you."}, ...data],
+    stream: true, 
   })
 
   // Create a ReadableStream to handle the streaming response
