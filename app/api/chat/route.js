@@ -51,8 +51,8 @@ Thank you for providing exceptional support to our Rentr community! Your assista
 // POST function to handle incoming requests
 export async function POST(req) {
   // const openai = new OpenAI() // Create a new instance of the OpenAI client
-  const genAI = new GoogleGenerativeAI('API_KEY');
-  const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
   const data = await req.json() // Parse the JSON body of the incoming request
 
   // Create a chat completion request to the OpenAI API
@@ -61,10 +61,11 @@ export async function POST(req) {
   //   model: 'gpt-3.5-turbo', // Specify the model to use
   //   stream: true, // Enable streaming responses
   // })
-  const completion = model.startChat({
-    history: [{role: 'user', parts: systemPrompt}, {role:"model", parts: "Great to meet you."}, ...data],
-    stream: true, 
+  const completion = await model.generateContentStream({
+    contents: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
   })
+
+  model.startChat()
 
   // Create a ReadableStream to handle the streaming response
   const stream = new ReadableStream({
@@ -72,8 +73,9 @@ export async function POST(req) {
       const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
       try {
         // Iterate over the streamed chunks of the response
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
+        for await (const chunk of completion.stream) {
+          // const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
+          const content = chunk.text() // Extract the content from the chunk
           if (content) {
             const text = encoder.encode(content) // Encode the content to Uint8Array
             controller.enqueue(text) // Enqueue the encoded text to the stream

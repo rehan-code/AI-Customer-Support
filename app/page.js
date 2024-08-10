@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 export default function Home() {
   const [messages, setMessages] = useState([
     {
-      role: 'assistant',
-      content: "Hi! I'm the Headstarter support assistant. How can I help you today?",
+      role: 'model',
+      parts: [{text: "Hi! I'm the Headstarter support assistant. How can I help you today?"}],
     },
   ])
   const [message, setMessage] = useState('')
@@ -19,8 +19,8 @@ export default function Home() {
     setMessage('')
     setMessages((messages) => [
       ...messages,
-      { role: 'user', content: message },
-      { role: 'assistant', content: '' },
+      { role: 'user', parts: [{text: message}] },
+      { role: 'model', parts: [{text: ''}] },
     ])
   
     try {
@@ -29,7 +29,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify([...messages, { role: 'user', content: message }]),
+        body: JSON.stringify([{ role: 'user', parts: [{text: message}] }, ...messages, ]),
       })
   
       if (!response.ok) {
@@ -48,7 +48,7 @@ export default function Home() {
           let otherMessages = messages.slice(0, messages.length - 1)
           return [
             ...otherMessages,
-            { ...lastMessage, content: lastMessage.content + text },
+            { ...lastMessage, parts: [{text: lastMessage.parts[0]?.text + text}] },
           ]
         })
       }
@@ -56,7 +56,7 @@ export default function Home() {
       console.error('Error:', error)
       setMessages((messages) => [
         ...messages,
-        { role: 'assistant', content: "I'm sorry, but I encountered an error. Please try again later." },
+        { role: 'model', parts: [{text: "I'm sorry, but I encountered an error. Please try again later."}] },
       ])
     }
     setIsLoading(false)
@@ -108,12 +108,12 @@ export default function Home() {
               key={index}
               display="flex"
               justifyContent={
-                message.role === 'assistant' ? 'flex-start' : 'flex-end'
+                message.role === 'model' ? 'flex-start' : 'flex-end'
               }
             >
               <Box
                 bgcolor={
-                  message.role === 'assistant'
+                  message.role === 'model'
                     ? 'primary.main'
                     : 'secondary.main'
                 }
@@ -121,7 +121,7 @@ export default function Home() {
                 borderRadius={16}
                 p={3}
               >
-                {message.content}
+                {message.parts[0]?.text}
               </Box>
             </Box>
           ))}
