@@ -7,7 +7,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      parts: [{text: "Hi! I'm the Headstarter support assistant. How can I help you today?"}],
+      parts: [{text: "Hi! I'm the Rentr support assistant. How can I help you today?"}],
     },
   ])
   const [message, setMessage] = useState('')

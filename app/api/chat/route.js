@@ -55,6 +55,12 @@ export async function POST(req) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
   const data = await req.json() // Parse the JSON body of the incoming request
 
+  // Get Embeddings
+  // const result = await model.embedContent(data[0].parts[0].text);
+  // const embedding = result.embedding;
+  // console.log(data[0].parts[0].text);
+  // console.log(embedding.values);
+
   // Create a chat completion request to the OpenAI API
   // const completion = await openai.chat.completions.create({
   //   messages: [{role: 'system', content: systemPrompt}, ...data], // Include the system prompt and user messages
