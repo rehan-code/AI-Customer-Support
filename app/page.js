@@ -1,150 +1,214 @@
-'use client'
+"use client";
 
-import { Box, Button, Stack, TextField } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import {
+  Box,
+  Button,
+  Container,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import {
+  SignedIn,
+  SignInButton,
+  SignedOut,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
 
 export default function Home() {
   const [messages, setMessages] = useState([
     {
-      role: 'model',
-      parts: [{text: "Hi! I'm your personalized Arabic learning assistant. Are you ready to learn today?"}],
+      role: "model",
+      parts: [
+        {
+          text: "Hi! I'm your personalized Arabic learning assistant. Are you ready to learn today?",
+        },
+      ],
     },
-  ])
-  const [message, setMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  ]);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
-    setIsLoading(true)
-    setMessage('')
+    setIsLoading(true);
+    setMessage("");
     setMessages((messages) => [
       ...messages,
-      { role: 'user', parts: [{text: message}] },
-      { role: 'model', parts: [{text: ''}] },
-    ])
-  
+      { role: "user", parts: [{ text: message }] },
+      { role: "model", parts: [{ text: "" }] },
+    ]);
+
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify([{ role: 'user', parts: [{text: message}] }, ...messages, ]),
-      })
-  
+        body: JSON.stringify([
+          { role: "user", parts: [{ text: message }] },
+          ...messages,
+        ]),
+      });
+
       if (!response.ok) {
-        throw new Error('Network response was not ok')
+        throw new Error("Network response was not ok");
       }
-  
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-  
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value, { stream: true })
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
         setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1]
-          let otherMessages = messages.slice(0, messages.length - 1)
+          let lastMessage = messages[messages.length - 1];
+          let otherMessages = messages.slice(0, messages.length - 1);
           return [
             ...otherMessages,
-            { ...lastMessage, parts: [{text: lastMessage.parts[0]?.text + text}] },
-          ]
-        })
+            {
+              ...lastMessage,
+              parts: [{ text: lastMessage.parts[0]?.text + text }],
+            },
+          ];
+        });
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error("Error:", error);
       setMessages((messages) => [
         ...messages,
-        { role: 'model', parts: [{text: "I'm sorry, but I encountered an error. Please try again later."}] },
-      ])
+        {
+          role: "model",
+          parts: [
+            {
+              text: "I'm sorry, but I encountered an error. Please try again later.",
+            },
+          ],
+        },
+      ]);
     }
-    setIsLoading(false)
-  }
+    setIsLoading(false);
+  };
 
   const handleKeyPress = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      sendMessage()
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
     }
-  }
+  };
 
-  const messagesEndRef = useRef(null)
+  const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const { user } = useUser();
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (!user) return;
+
+    scrollToBottom();
+    console.log(user.fullName);
+  }, [messages, user]);
 
   return (
-    <Box
-      width="100vw"
-      height="100vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
-    >
-      <Stack
-        direction={'column'}
-        width="500px"
-        height="700px"
-        border="1px solid black"
-        p={2}
-        spacing={3}
+    <Stack width="100vw" height="100vh" direction={"row"}>
+      <Stack width="100%" height="100%" direction={"column"} p={6}>
+        <Typography variant="h2">You're Arabic Tutor AI</Typography>
+        <Typography variant="h5" paddingY={4}>
+          Learn arabic daily by chatting with the AI to grow your vocabulary
+          while using the putting it into practice.
+        </Typography>
+
+        <SignedOut>
+          <Typography paddingY={2}>
+            Log in to save history <i>(in Development)</i>
+          </Typography>
+          <SignInButton className="w-32">
+            <Button variant="contained" size="large">
+              Sign In
+            </Button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <Stack direction={"row"}>
+            {user && (
+              <Typography paddingRight={1}>
+                Logged in as {user.fullName}
+              </Typography>
+            )}
+            <UserButton />
+          </Stack>
+        </SignedIn>
+      </Stack>
+      <Box
+        width="100%"
+        height="100%"
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
       >
         <Stack
-          direction={'column'}
-          spacing={2}
-          flexGrow={1}
-          overflow="auto"
-          maxHeight="100%"
+          direction={"column"}
+          width="500px"
+          height="700px"
+          border="1px solid black"
+          p={2}
+          spacing={3}
         >
-          {messages.map((message, index) => (
-            <Box
-              key={index}
-              display="flex"
-              justifyContent={
-                message.role === 'model' ? 'flex-start' : 'flex-end'
-              }
-            >
-              <Box
-                bgcolor={
-                  message.role === 'model'
-                    ? 'primary.main'
-                    : 'secondary.main'
-                }
-                color="white"
-                borderRadius={16}
-                p={3}
-              >
-                {message.parts[0]?.text}
-              </Box>
-            </Box>
-          ))}
-          <div ref={messagesEndRef} />
-        </Stack>
-        <Stack direction={'row'} spacing={2}>
-          <TextField
-            label="Message"
-            fullWidth
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-          />
-          <Button 
-            variant="contained" 
-            onClick={sendMessage}
-            disabled={isLoading}
+          <Stack
+            direction={"column"}
+            spacing={2}
+            flexGrow={1}
+            overflow="auto"
+            maxHeight="100%"
           >
-            {isLoading ? 'Sending...' : 'Send'}
-          </Button>
+            {messages.map((message, index) => (
+              <Box
+                key={index}
+                display="flex"
+                justifyContent={
+                  message.role === "model" ? "flex-start" : "flex-end"
+                }
+              >
+                <Box
+                  bgcolor={
+                    message.role === "model" ? "primary.main" : "secondary.main"
+                  }
+                  color="white"
+                  borderRadius={16}
+                  p={3}
+                >
+                  {message.parts[0]?.text}
+                </Box>
+              </Box>
+            ))}
+            <div ref={messagesEndRef} />
+          </Stack>
+          <Stack direction={"row"} spacing={2}>
+            <TextField
+              label="Message"
+              fullWidth
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+            />
+            <Button
+              variant="contained"
+              onClick={sendMessage}
+              disabled={isLoading}
+            >
+              {isLoading ? "Sending..." : "Send"}
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
-    </Box>
-  )
+      </Box>
+    </Stack>
+  );
 }
