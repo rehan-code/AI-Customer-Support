@@ -16,6 +16,7 @@ import {
   UserButton,
   useUser,
 } from "@clerk/nextjs";
+import { collection, doc, getDoc, writeBatch } from "firebase/firestore";
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -30,6 +31,38 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const {isSignedIn, user} = useUser()
+
+  const saveMessages = async () => {
+    try {
+      const userDocRef = doc(collection(db, "users"), user.id);
+      const userDocSnap = await getDoc(userDocRef);
+
+      const batch = writeBatch(db);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const updatedSets = (userData.message_history || []);
+        batch.update(userDocRef, { flashcardSets: updatedSets });
+      } else {
+        batch.set(userDocRef, { flashcardSets: [{ name: setName }] });
+      }
+
+      const setDocRef = doc(collection(userDocRef, "flashcardSets"), setName);
+      batch.set(setDocRef, { flashcards });
+
+      await batch.commit();
+
+      alert("Flashcards saved successfully!");
+      handleCloseDialog();
+      setSetName("");
+      router.push(`/flashcards`);
+
+    } catch (error) {
+      console.error("Error saving flashcards:", error);
+      alert("An error occurred while saving flashcards. Please try again.");
+    }
+   };
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -105,8 +138,6 @@ export default function Home() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const { user } = useUser();
 
   useEffect(() => {
     if (!user) return;
