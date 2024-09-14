@@ -17,6 +17,7 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import { collection, doc, getDoc, writeBatch } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -41,28 +42,42 @@ export default function Home() {
       const batch = writeBatch(db);
 
       if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        const updatedSets = (userData.message_history || []);
-        batch.update(userDocRef, { flashcardSets: updatedSets });
+        // const userData = userDocSnap.data();
+        // const updatedSets = userData.message_history;
+        batch.update(userDocRef, { message_history: messages });
       } else {
-        batch.set(userDocRef, { flashcardSets: [{ name: setName }] });
+        batch.set(userDocRef, { message_history: messages });
       }
 
-      const setDocRef = doc(collection(userDocRef, "flashcardSets"), setName);
-      batch.set(setDocRef, { flashcards });
+      // const setDocRef = doc(collection(userDocRef, "flashcardSets"), setName);
+      // batch.set(setDocRef, { flashcards });
 
       await batch.commit();
 
-      alert("Flashcards saved successfully!");
-      handleCloseDialog();
-      setSetName("");
-      router.push(`/flashcards`);
+      // alert("Flashcards saved successfully!");
+      // handleCloseDialog();
+      // setSetName("");
+      // router.push(`/flashcards`);
 
     } catch (error) {
-      console.error("Error saving flashcards:", error);
-      alert("An error occurred while saving flashcards. Please try again.");
+      console.error("Error saving messages:", error);
+      alert("An error occurred while saving messages. Please try again.");
     }
    };
+
+  const getMessageHistory = async () => {
+    try {
+      const userDocRef = doc(collection(db, "users"), user.id);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        setMessages(userData.message_history)
+      }
+    } catch (error) {
+      console.error("Error getting message history:", error);
+    }
+  }
 
   const sendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -109,6 +124,11 @@ export default function Home() {
           ];
         });
       }
+
+      // save messages if signed in
+      // if (SignedIn) {
+      //   saveMessages()
+      // }
     } catch (error) {
       console.error("Error:", error);
       setMessages((messages) => [
@@ -124,6 +144,7 @@ export default function Home() {
       ]);
     }
     setIsLoading(false);
+    console.log(messages)
   };
 
   const handleKeyPress = (event) => {
@@ -141,9 +162,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return;
+    // if (isSignedIn) getMessageHistory();
 
     scrollToBottom();
-    console.log(user.fullName);
   }, [messages, user]);
 
   return (
