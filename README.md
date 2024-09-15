@@ -1,6 +1,6 @@
-# AI Customer Support
+# Arabic tutor AI
 
-A customer support agent using Gemini API. 
+An agent to help you learn Arabic using Gemini API. 
 
 Deployed as a subdomain at [assistant.rehanmohideen.com](https://assistant.rehanmohideen.com) using AWS EC2 ubuntu, cammy.
 
