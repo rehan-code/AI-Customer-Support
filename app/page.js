@@ -18,6 +18,7 @@ import {
 } from "@clerk/nextjs";
 import { collection, doc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/firebase";
+// import { useChat } from 'ai/react';
 
 export default function Home() {
   const [messages, setMessages] = useState([

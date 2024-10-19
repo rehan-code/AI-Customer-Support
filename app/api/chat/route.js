@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+// import { google } from '@ai-sdk/google';
 import {NextResponse} from 'next/server' // Import NextResponse from Next.js for handling responses
 import OpenAI from 'openai' // Import OpenAI library for interacting with the OpenAI API
 
@@ -102,6 +103,7 @@ export async function POST(req) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
   const data = await req.json() // Parse the JSON body of the incoming request
+  console.log(data);
 
   // Get Embeddings
   // const result = await model.embedContent(data[0].parts[0].text);
@@ -120,6 +122,8 @@ export async function POST(req) {
   })
 
   model.startChat()
+  console.log("moedl start");
+
 
   // Create a ReadableStream to handle the streaming response
   const stream = new ReadableStream({
@@ -127,15 +131,23 @@ export async function POST(req) {
       const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
       try {
         // Iterate over the streamed chunks of the response
+        console.log("it");
         for await (const chunk of completion.stream) {
+          console.log("looping");
+
           // const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
           const content = chunk.text() // Extract the content from the chunk
+          console.log(content);
           if (content) {
             const text = encoder.encode(content) // Encode the content to Uint8Array
             controller.enqueue(text) // Enqueue the encoded text to the stream
+            console.log("start");
+            console.log(content);
+
           }
         }
       } catch (err) {
+        console.log("roo",err);
         controller.error(err) // Handle any errors that occur during streaming
       } finally {
         controller.close() // Close the stream when done

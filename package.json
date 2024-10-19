@@ -9,15 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.52",
     "@clerk/clerk-js": "^5.21.2",
     "@clerk/nextjs": "^5.5.2",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "@google/generative-ai": "^0.16.0",
     "@mui/material": "^5.16.6",
+    "ai": "^3.4.16",
     "firebase": "^10.13.1",
     "langchain": "^0.2.15",
-    "next": "14.2.5",
+    "next": "^14.2.15",
     "openai": "^4.54.0",
     "react": "^18",
     "react-dom": "^18"
