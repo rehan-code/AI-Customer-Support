@@ -102,6 +102,7 @@ export async function POST(req) {
   // const openai = new OpenAI() // Create a new instance of the OpenAI client
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+  // const model = google('gemini-1.5-pro-latest');
   const data = await req.json() // Parse the JSON body of the incoming request
   console.log(data);
 
@@ -120,6 +121,11 @@ export async function POST(req) {
   const completion = await model.generateContentStream({
     contents: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
   })
+
+  // const { textStream } = await streamText({
+  //   model: model,
+  //   messages: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
+  // });
 
   model.startChat()
   console.log("moedl start");
