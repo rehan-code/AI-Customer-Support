@@ -18,22 +18,23 @@ import {
 } from "@clerk/nextjs";
 import { collection, doc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/firebase";
-// import { useChat } from 'ai/react';
+import { useChat } from 'ai/react';
 
 export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: "model",
-      parts: [
-        {
-          text: "Hi! I'm your personalized Arabic learning assistant. Are you ready to learn today?",
-        },
-      ],
-    },
-  ]);
+  // const [messages, setMessages] = useState([
+  //   {
+  //     role: "model",
+  //     parts: [
+  //       {
+  //         text: "Hi! I'm your personalized Arabic learning assistant. Are you ready to learn today?",
+  //       },
+  //     ],
+  //   },
+  // ]);
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
   const {isSignedIn, user} = useUser()
+  const { messages, input, handleSubmit, handleInputChange, isLoading } = useChat()
 
   const saveMessages = async () => {
     try {
@@ -80,73 +81,73 @@ export default function Home() {
     }
   }
 
-  const sendMessage = async () => {
-    if (!message.trim() || isLoading) return;
-    setIsLoading(true);
-    setMessage("");
-    setMessages((messages) => [
-      ...messages,
-      { role: "user", parts: [{ text: message }] },
-      { role: "model", parts: [{ text: "" }] },
-    ]);
+  // const sendMessage = async () => {
+  //   if (!message.trim() || isLoading) return;
+  //   setIsLoading(true);
+  //   setMessage("");
+  //   setMessages((messages) => [
+  //     ...messages,
+  //     { role: "user", parts: [{ text: message }] },
+  //     { role: "model", parts: [{ text: "" }] },
+  //   ]);
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify([
-          { role: "user", parts: [{ text: message }] },
-          ...messages,
-        ]),
-      });
+  //   try {
+  //     const response = await fetch("/api/chat", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify([
+  //         { role: "user", parts: [{ text: message }] },
+  //         ...messages,
+  //       ]),
+  //     });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+  //     const reader = response.body.getReader();
+  //     const decoder = new TextDecoder();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1];
-          let otherMessages = messages.slice(0, messages.length - 1);
-          return [
-            ...otherMessages,
-            {
-              ...lastMessage,
-              parts: [{ text: lastMessage.parts[0]?.text + text }],
-            },
-          ];
-        });
-      }
+  //     while (true) {
+  //       const { done, value } = await reader.read();
+  //       if (done) break;
+  //       const text = decoder.decode(value, { stream: true });
+  //       setMessages((messages) => {
+  //         let lastMessage = messages[messages.length - 1];
+  //         let otherMessages = messages.slice(0, messages.length - 1);
+  //         return [
+  //           ...otherMessages,
+  //           {
+  //             ...lastMessage,
+  //             parts: [{ text: lastMessage.parts[0]?.text + text }],
+  //           },
+  //         ];
+  //       });
+  //     }
 
       // save messages if signed in
       // if (SignedIn) {
       //   saveMessages()
       // }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages((messages) => [
-        ...messages,
-        {
-          role: "model",
-          parts: [
-            {
-              text: "I'm sorry, but I encountered an error. Please try again later.",
-            },
-          ],
-        },
-      ]);
-    }
-    setIsLoading(false);
-    console.log(messages)
-  };
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     setMessages((messages) => [
+  //       ...messages,
+  //       {
+  //         role: "model",
+  //         parts: [
+  //           {
+  //             text: "I'm sorry, but I encountered an error. Please try again later.",
+  //           },
+  //         ],
+  //       },
+  //     ]);
+  //   }
+  //   setIsLoading(false);
+  //   console.log(messages)
+  // };
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -226,18 +227,18 @@ export default function Home() {
                 key={index}
                 display="flex"
                 justifyContent={
-                  message.role === "model" ? "flex-start" : "flex-end"
+                  message.role === "assistant" ? "flex-start" : "flex-end"
                 }
               >
                 <Box
                   bgcolor={
-                    message.role === "model" ? "primary.main" : "secondary.main"
+                    message.role === "assistant" ? "primary.main" : "secondary.main"
                   }
                   color="white"
                   borderRadius={16}
                   p={3}
                 >
-                  {message.parts[0]?.text}
+                  {message.content}
                 </Box>
               </Box>
             ))}
@@ -247,14 +248,21 @@ export default function Home() {
             <TextField
               label="Message"
               fullWidth
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              value={input}
+              // onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
+              // onKeyPress={handleKeyPress}
+              onKeyDown={async event => {
+                if (event.key === 'Enter') {
+                  handleSubmit();
+                }
+              }}
               disabled={isLoading}
             />
             <Button
               variant="contained"
-              onClick={sendMessage}
+              // onClick={append({ content: input, role: 'user' })}
+              onClick={handleSubmit}
               disabled={isLoading}
             >
               {isLoading ? "Sending..." : "Send"}

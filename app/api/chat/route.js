@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-// import { google } from '@ai-sdk/google';
+// import { GoogleGenerativeAI } from '@google/generative-ai';
+import { google } from '@ai-sdk/google';
+import { CoreMessage, streamText } from 'ai';
 import {NextResponse} from 'next/server' // Import NextResponse from Next.js for handling responses
 import OpenAI from 'openai' // Import OpenAI library for interacting with the OpenAI API
 
@@ -99,12 +100,14 @@ Thank you for being a dedicated and engaging Arabic teacher. Your support helps 
 
 // POST function to handle incoming requests
 export async function POST(req) {
+  const { messages } = await req.json();
   // const openai = new OpenAI() // Create a new instance of the OpenAI client
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-  // const model = google('gemini-1.5-pro-latest');
-  const data = await req.json() // Parse the JSON body of the incoming request
-  console.log(data);
+
+  // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+  const model = google('gemini-1.5-pro-latest');
+  // const data = await req.json() // Parse the JSON body of the incoming request
+  // console.log(data);
 
   // Get Embeddings
   // const result = await model.embedContent(data[0].parts[0].text);
@@ -118,48 +121,49 @@ export async function POST(req) {
   //   model: 'gpt-3.5-turbo', // Specify the model to use
   //   stream: true, // Enable streaming responses
   // })
-  const completion = await model.generateContentStream({
-    contents: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
-  })
+  // const completion = await model.generateContentStream({
+  //   contents: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
+  // })
 
-  // const { textStream } = await streamText({
-  //   model: model,
-  //   messages: [{role: 'user', parts: [{text: systemPrompt}]}, ...data],
-  // });
+  const response = await streamText({
+    model: model,
+    system: systemPrompt,
+    messages,
+  });
 
-  model.startChat()
-  console.log("moedl start");
+  // model.startChat()
+  // console.log("moedl start");
 
 
   // Create a ReadableStream to handle the streaming response
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
-      try {
-        // Iterate over the streamed chunks of the response
-        console.log("it");
-        for await (const chunk of completion.stream) {
-          console.log("looping");
+  // const stream = new ReadableStream({
+  //   async start(controller) {
+  //     const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
+  //     try {
+  //       // Iterate over the streamed chunks of the response
+  //       console.log("it");
+  //       for await (const chunk of completion.stream) {
+  //         console.log("looping");
 
-          // const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
-          const content = chunk.text() // Extract the content from the chunk
-          console.log(content);
-          if (content) {
-            const text = encoder.encode(content) // Encode the content to Uint8Array
-            controller.enqueue(text) // Enqueue the encoded text to the stream
-            console.log("start");
-            console.log(content);
+  //         // const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
+  //         const content = chunk.text() // Extract the content from the chunk
+  //         console.log(content);
+  //         if (content) {
+  //           const text = encoder.encode(content) // Encode the content to Uint8Array
+  //           controller.enqueue(text) // Enqueue the encoded text to the stream
+  //           console.log("start");
+  //           console.log(content);
 
-          }
-        }
-      } catch (err) {
-        console.log("roo",err);
-        controller.error(err) // Handle any errors that occur during streaming
-      } finally {
-        controller.close() // Close the stream when done
-      }
-    },
-  })
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.log("roo",err);
+  //       controller.error(err) // Handle any errors that occur during streaming
+  //     } finally {
+  //       controller.close() // Close the stream when done
+  //     }
+  //   },
+  // })
 
-  return new NextResponse(stream) // Return the stream as the response
+  return response.toDataStreamResponse() // Return the stream as the response
 }
